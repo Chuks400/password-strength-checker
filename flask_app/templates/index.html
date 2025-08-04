@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Password Strength Checker</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+</head>
+<body>
+<div class="container mt-5">
+    <h2>Password Strength Checker</h2>
+    <form method="post">
+        <div class="mb-3">
+            <label for="password" class="form-label">Enter Password</label>
+            <input type="password" class="form-control" id="password" name="password" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Check</button>
+    </form>
+    {% if result %}
+    <div class="mt-4">
+        <h5>Requirements:</h5>
+        <ul>
+            {% for req, met in result.requirements.items() %}
+            <li>{{ req }}: <strong class="{{ 'text-success' if met else 'text-danger' }}">{{ 'OK' if met else 'Missing' }}</strong></li>
+            {% endfor %}
+        </ul>
+        <h5>Entropy:</h5>
+        <p>{{ result.entropy|round(1) }} bits — <strong>{{ result.entropy_level }}</strong></p>
+        <h5>HaveIBeenPwned Check:</h5>
+        {% if result.pwned_count is none %}
+            <span class="text-muted">(Not checked or error)</span>
+        {% elif result.pwned_count == 0 %}
+            <span class="text-success">This password was NOT found in known data breaches.</span>
+        {% else %}
+            <span class="text-danger">This password has been found {{ result.pwned_count }} times in data breaches!</span>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+</body>
+</html>
