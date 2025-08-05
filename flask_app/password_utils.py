@@ -35,6 +35,26 @@ def check_pwned(password):
     except requests.RequestException:
         return None
 
+import random
+import string
+
+def generate_strong_password(length=14):
+    chars = string.ascii_letters + string.digits + string.punctuation
+    # Ensure at least one of each type
+    while True:
+        pw = [
+            random.choice(string.ascii_lowercase),
+            random.choice(string.ascii_uppercase),
+            random.choice(string.digits),
+            random.choice(string.punctuation)
+        ]
+        pw += [random.choice(chars) for _ in range(length - 4)]
+        random.shuffle(pw)
+        pw = ''.join(pw)
+        # Check all requirements
+        if (re.search(r'[a-z]', pw) and re.search(r'[A-Z]', pw) and re.search(r'\d', pw) and re.search(r'[^A-Za-z0-9]', pw)):
+            return pw
+
 def check_password_strength_web(password):
     requirements = {
         'Minimum length (8+)': len(password) >= 8,
@@ -59,9 +79,13 @@ def check_password_strength_web(password):
     pwned_count = None
     if all(requirements.values()):
         pwned_count = check_pwned(password)
+    suggestion = None
+    if entropy_level in ["Very Weak", "Weak"]:
+        suggestion = generate_strong_password()
     return {
         'requirements': requirements,
         'entropy': entropy,
         'entropy_level': entropy_level,
-        'pwned_count': pwned_count
+        'pwned_count': pwned_count,
+        'suggestion': suggestion
     }

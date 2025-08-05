@@ -9,39 +9,80 @@
 <body class="bg-light text-dark" id="mainBody">
 <nav class="navbar navbar-expand-lg navbar-light bg-light justify-content-end">
   <div class="container-fluid">
-    <button id="darkModeToggle" class="btn btn-outline-secondary ms-auto">🌙 Dark Mode</button>
+    <form method="get" action="" class="d-flex me-2">
+      <select name="lang" class="form-select form-select-sm" onchange="this.form.submit()">
+        {% for code, name in LANGUAGES.items() %}
+          <option value="{{ code }}" {% if session.get('lang', 'en') == code %}selected{% endif %}>{{ name }}</option>
+        {% endfor %}
+      </select>
+    </form>
+    <button id="darkModeToggle" class="btn btn-outline-secondary ms-2">🌙 {{ _('Dark Mode') }}</button>
   </div>
 </nav>
 <div class="container mt-5">
-    <h2>Password Strength Checker</h2>
+    <h2>{{ _('Password Strength Checker') }}</h2>
     <form method="post">
         <div class="mb-3">
-            <label for="password" class="form-label">Enter Password</label>
+            <label for="password" class="form-label">{{ _('Enter Password') }}</label>
             <input type="password" class="form-control" id="password" name="password" required>
         </div>
-        <button type="submit" class="btn btn-primary">Check</button>
+        <button type="submit" class="btn btn-primary">{{ _('Check') }}</button>
     </form>
     {% if result %}
     <div class="mt-4">
-        <h5>Requirements:</h5>
+        <h5>{{ _('Requirements') }}:
+            <span data-bs-toggle="tooltip" title="{{ _('Password must meet all requirements for best security.') }}">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-info-circle" viewBox="0 0 16 16">
+                  <path d="M8 15A7 7 0 1 0 8 1a7 7 0 0 0 0 14zm0 1A8 8 0 1 1 8 0a8 8 0 0 1 0 16z"/>
+                  <path d="m8.93 6.588-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.194.897.105 1.319.808 1.319.545 0 .876-.252 1.02-.598l.088-.416c.066-.3.115-.345.356-.345h.318l.082-.38H8.678c-.294 0-.352-.176-.288-.469l.738-3.468c.194-.897-.105-1.319-.808-1.319-.545 0-.876.252-1.02.598l-.088.416c-.066.3-.115.345-.356.345H7.07l-.082.38h.318z"/>
+                  <circle cx="8" cy="4.5" r="1"/>
+                </svg>
+            </span>
+        </h5>
         <ul>
             {% for req, met in result.requirements.items() %}
-            <li>{{ req }}: <strong class="{{ 'text-success' if met else 'text-danger' }}">{{ 'OK' if met else 'Missing' }}</strong></li>
+            <li>
+                <span data-bs-toggle="tooltip" title="{% if req=='min_length' %}{{ _('At least 8 characters') }}{% elif req=='uppercase' %}{{ _('At least one uppercase letter') }}{% elif req=='lowercase' %}{{ _('At least one lowercase letter') }}{% elif req=='digit' %}{{ _('At least one digit') }}{% elif req=='symbol' %}{{ _('At least one special symbol') }}{% endif %}">
+                    {{ _(req.replace('_', ' ').capitalize()) }}:
+                </span>
+                <strong class="{{ 'text-success' if met else 'text-danger' }}">{{ _('OK') if met else _('Missing') }}</strong>
+            </li>
             {% endfor %}
         </ul>
-        <h5>Entropy:</h5>
-        <p>{{ result.entropy|round(1) }} bits — <strong>{{ result.entropy_level }}</strong></p>
-        <h5>HaveIBeenPwned Check:</h5>
+        <h5>{{ _('Entropy') }}:
+            <span data-bs-toggle="tooltip" title="{{ _('Entropy estimates password unpredictability. Higher is better.') }}">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-info-circle" viewBox="0 0 16 16">
+                  <path d="M8 15A7 7 0 1 0 8 1a7 7 0 0 0 0 14zm0 1A8 8 0 1 1 8 0a8 8 0 0 1 0 16z"/>
+                  <path d="m8.93 6.588-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.194.897.105 1.319.808 1.319.545 0 .876-.252 1.02-.598l.088-.416c.066-.3.115-.345.356-.345h.318l.082-.38H8.678c-.294 0-.352-.176-.288-.469l.738-3.468c.194-.897-.105-1.319-.808-1.319-.545 0-.876.252-1.02.598l-.088.416c-.066.3-.115.345-.356.345H7.07l-.082.38h.318z"/>
+                  <circle cx="8" cy="4.5" r="1"/>
+                </svg>
+            </span>
+        </h5>
+        {% set entropy_color = 'text-danger' if result.entropy < 60 else 'text-warning' if result.entropy < 80 else 'text-success' %}
+        <p><span class="{{ entropy_color }} fw-bold">{{ result.entropy|round(1) }} bits</span> — <strong class="{{ entropy_color }}">{{ _(result.entropy_level) }}</strong></p>
+        <h5>{{ _('HaveIBeenPwned Check') }}:</h5>
         {% if result.pwned_count is none %}
-            <span class="text-muted">(Not checked or error)</span>
+            <span class="text-muted">({{ _('Not checked or error') }})</span>
         {% elif result.pwned_count == 0 %}
-            <span class="text-success">This password was NOT found in known data breaches.</span>
+            <span class="text-success">{{ _('This password was NOT found in known data breaches.') }}</span>
         {% else %}
-            <span class="text-danger">This password has been found {{ result.pwned_count }} times in data breaches!</span>
+            <span class="text-danger">{{ _('This password has been found %(count)s times in data breaches!', count=result.pwned_count) }}</span>
+        {% endif %} 
+        <div class="mt-3 d-flex gap-2">
+            <form action="{{ url_for('export_csv') }}" method="get">
+                <button type="submit" class="btn btn-outline-success">{{ _('Export as CSV') }}</button>
+            </form>
+            <form action="{{ url_for('export_pdf') }}" method="get">
+                <button type="submit" class="btn btn-outline-danger">{{ _('Export as PDF') }}</button>
+            </form>
+        </div>
+        {% if result.suggestion %}
+        <div class="alert alert-info mt-3">
+            <strong>{{ _('Suggested Strong Password:') }}</strong>
+            <span id="suggestedPassword">{{ result.suggestion }}</span>
+            <button class="btn btn-sm btn-secondary ms-2" type="button" onclick="navigator.clipboard.writeText(document.getElementById('suggestedPassword').textContent)">{{ _('Copy') }}</button>
+        </div>
         {% endif %}
-        <form action="{{ url_for('export_csv') }}" method="get" class="mt-3">
-            <button type="submit" class="btn btn-outline-success">Export as CSV</button>
-        </form>
     </div>
     {% endif %}
 </div>
