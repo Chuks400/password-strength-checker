@@ -43,7 +43,7 @@ def index():
             'entropy_level': result['entropy_level'],
             'pwned_count': result['pwned_count']
         }
-    return render_template('index.html', result=result, LANGUAGES=LANGUAGES, export_pdf=url_for('export_pdf'))
+    return render_template('index.html', result=result, LANGUAGES=app.config['LANGUAGES'], export_pdf=url_for('export_pdf'))
 
 @app.route('/export_csv')
 def export_csv():
