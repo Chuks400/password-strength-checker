@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, session, redirect, url_for, send_file
+from flask import Flask, render_template, request, session, redirect, url_for, send_file, g
 from flask_babel import Babel, _
 from password_utils import check_password_strength_web
 import io
@@ -9,24 +9,26 @@ from reportlab.pdfgen import canvas
 app = Flask(__name__)
 app.secret_key = 'supersecretkey'  # For session usage
 
-# Babel config
-LANGUAGES = {
+# Configure Babel for translations
+app.config['BABEL_DEFAULT_LOCALE'] = 'en'
+app.config['LANGUAGES'] = {
     'en': 'English',
     'fr': 'Français',
     'zh': '中文'
 }
-app.config['BABEL_DEFAULT_LOCALE'] = 'en'
-babel = Babel(app)
 
-@babel.localeselector
 def get_locale():
-    return session.get('lang', 'en')
+    if 'language' in session:
+        return session['language']
+    return request.accept_languages.best_match(app.config['LANGUAGES'].keys())
+
+babel = Babel(app, locale_selector=get_locale)
 
 @app.before_request
 def before_request():
     lang = request.args.get('lang')
-    if lang in LANGUAGES:
-        session['lang'] = lang
+    if lang in app.config['LANGUAGES']:
+        session['language'] = lang
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
